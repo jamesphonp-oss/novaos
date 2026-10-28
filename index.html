@@ -1,0 +1,564 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NovaOS</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;display:grid;place-items:center;
+ background:radial-gradient(ellipse,#39315f,#101019 75%);
+ color:white;font-family:Segoe UI,Arial,sans-serif
+}
+.phone{
+ width:360px;height:740px;max-width:100vw;max-height:95vh;
+ min-height:550px;position:relative;overflow:hidden;
+ border:5px solid #474653;border-radius:40px;
+ background:#191829;box-shadow:0 25px 80px #0009
+}
+.status{
+ height:42px;padding:0 20px;display:flex;
+ align-items:center;justify-content:space-between;
+ font-size:12px;font-weight:bold
+}
+.screen{
+ height:calc(100% - 70px);overflow:auto;padding:24px 20px;
+ background:radial-gradient(ellipse at 85% 10%,#483873,transparent 45%),
+ linear-gradient(150deg,#26213e,#171725 70%)
+}
+#date{font-size:11px;letter-spacing:1px;color:#c1bbdf}
+h1{font-size:38px;margin:12px 0 5px;letter-spacing:-1px}
+.subtitle{color:#c1bbdf;font-size:14px}
+.weather{
+ margin-top:28px;padding:18px;border-radius:20px;
+ background:#ffffff10;border:1px solid #ffffff15
+}
+.weather small,.section{color:#bdb8d8;letter-spacing:1px}
+.weather h3{font-size:17px}
+.section{font-size:11px;margin:30px 0 18px}
+.apps{display:grid;grid-template-columns:repeat(3,1fr);gap:23px 8px}
+.app{
+ display:flex;flex-direction:column;align-items:center;gap:8px;
+ border:0;background:none;color:white;font-size:11px;cursor:pointer
+}
+.app-icon{
+ width:57px;height:57px;border-radius:19px;display:grid;
+ place-items:center;font-size:27px;
+ box-shadow:inset 0 1px #ffffff40;transition:.15s
+}
+.app:hover .app-icon{transform:translateY(-3px)}
+.pink{background:linear-gradient(135deg,#ff83b9,#ad397b)}
+.blue{background:linear-gradient(135deg,#72d5ff,#4264d9)}
+.purple{background:linear-gradient(135deg,#c69aff,#7946ce)}
+.orange{background:linear-gradient(135deg,#ffcb79,#d96843)}
+.grey{background:linear-gradient(135deg,#9295a8,#45475b)}
+.green{background:linear-gradient(135deg,#6be0b1,#268d78)}
+.dock{
+ margin-top:30px;padding:12px 5px;border-radius:22px;
+ background:#ffffff12;display:flex;justify-content:space-around
+}
+.dock button{
+ width:48px;height:48px;border:0;border-radius:15px;
+ color:white;background:#ffffff15;font-size:22px;cursor:pointer
+}
+.homebar{
+ position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+ height:4px;width:100px;border-radius:8px;background:white;z-index:2
+}
+#window{
+ position:absolute;inset:42px 0 14px;overflow:auto;
+ padding:20px;background:#1b1a2c;z-index:5
+}
+#window[hidden]{display:none}
+.top{display:flex;justify-content:space-between;align-items:center;gap:5px}
+.top button,.action{
+ color:white;border:0;border-radius:12px;padding:10px 14px;
+ background:#ffffff18;cursor:pointer
+}
+#content{margin-top:20px;font-size:14px;color:#e7e5f5}
+#content h2{font-size:26px;color:white}
+#content input,#content textarea{
+ display:block;width:100%;padding:12px;margin:12px 0;
+ background:#ffffff0d;color:white;border:1px solid #ffffff30;
+ border-radius:12px;font:inherit
+}
+#content textarea{height:180px}
+#content .action{background:#7861d8}
+.row{padding:14px 0;border-bottom:1px solid #ffffff20}
+#content .action:active{transform:scale(.98)}
+@media(max-width:380px){.phone{border-radius:25px}}
+</style>
+</head>
+<body>
+
+<div class="phone">
+ <div class="status">
+  <span id="clock">12:00</span>
+  <span>● Wi-Fi ▰ 100%</span>
+ </div>
+
+ <main class="screen" id="home">
+  <p id="date"></p>
+  <h1>Good day.</h1>
+  <p class="subtitle">Welcome to your world.</p>
+
+  <div class="weather">
+   <small>YOUR DAY</small>
+   <h3>☀️ Looking good.</h3>
+   <p class="subtitle">Make today yours.</p>
+  </div>
+
+  <p class="section">YOUR APPS</p>
+  <div class="apps">
+   <button class="app" data-app="Messages"><span class="app-icon pink">✉</span>Messages</button>
+   <button class="app" data-app="Browser"><span class="app-icon blue">◎</span>Browser</button>
+   <button class="app" data-app="Music"><span class="app-icon purple">♫</span>Music</button>
+   <button class="app" data-app="Photos"><span class="app-icon orange">▧</span>Photos</button>
+   <button class="app" data-app="Settings"><span class="app-icon grey">⚙</span>Settings</button>
+   <button class="app" data-app="Notes"><span class="app-icon green">✎</span>Notes</button>
+  </div>
+
+  <div class="dock">
+   <button data-app="Phone" title="Phone">☎</button>
+   <button data-app="Messages" title="Messages">✉</button>
+   <button data-app="Browser" title="Browser">◎</button>
+   <button data-app="Settings" title="Settings">⚙</button>
+  </div>
+ </main>
+
+ <section id="window" hidden>
+  <div class="top">
+   <button id="back">‹ Back</button>
+   <strong id="title">App</strong>
+   <button id="close">✕</button>
+  </div>
+  <div id="content"></div>
+ </section>
+
+ <div class="homebar"></div>
+</div>
+
+<!-- BOOT SCREEN -->
+<style>
+#nova-boot{
+ position:fixed;inset:0;z-index:999999;display:flex;
+ flex-direction:column;align-items:center;justify-content:center;
+ overflow:hidden;background:radial-gradient(ellipse at 50% 42%,
+ #18274c 0%,#0b1020 38%,#03050b 100%);
+ color:white;font-family:Segoe UI,Arial,sans-serif;
+ transition:opacity .8s,visibility .8s
+}
+#nova-boot.finished{opacity:0;visibility:hidden;pointer-events:none}
+.boot-logo{
+ width:94px;height:94px;border-radius:29px;display:grid;
+ place-items:center;background:linear-gradient(145deg,#8ce8ff,#526cff 55%,#9c63ff);
+ box-shadow:0 0 35px #557aff77;font-size:51px;font-weight:800;
+ animation:nova-pulse 2s ease-in-out infinite
+}
+.boot-name{margin-top:27px;font-size:32px;font-weight:600;letter-spacing:5px}
+.boot-version{margin-top:8px;color:#9daed0;font-size:11px;letter-spacing:3px}
+.boot-loader{width:190px;height:3px;margin-top:57px;overflow:hidden;border-radius:10px;background:#29344d}
+.boot-progress{height:100%;width:0;background:linear-gradient(90deg,#58c8ff,#a68aff);animation:nova-load 3.8s ease-in-out forwards}
+.boot-status{margin-top:17px;color:#b5c5e3;font-size:12px;letter-spacing:1px}
+.boot-footer{position:absolute;bottom:32px;color:#66748e;font-size:10px;letter-spacing:2px}
+@keyframes nova-pulse{50%{transform:scale(1.06);box-shadow:0 0 55px #557affaa}}
+@keyframes nova-load{0%{width:0}25%{width:28%}55%{width:61%}80%{width:83%}100%{width:100%}}
+</style>
+
+<div id="nova-boot">
+ <div class="boot-logo">N</div>
+ <div class="boot-name">NovaOS</div>
+ <div class="boot-version">MOBILE SYSTEM</div>
+ <div class="boot-loader"><div class="boot-progress"></div></div>
+ <div class="boot-status" id="nova-boot-status">Initialising system...</div>
+ <div class="boot-footer">POWERED BY NovaOS</div>
+</div>
+
+<!-- LOCK SCREEN -->
+<style>
+#nova-lock{
+ position:fixed;inset:0;z-index:999990;display:flex;
+ flex-direction:column;align-items:center;overflow:hidden;
+ padding:65px 24px 35px;color:white;font-family:Segoe UI,Arial,sans-serif;
+ background:radial-gradient(ellipse at 20% 25%,#6d54bc99,transparent 42%),
+ radial-gradient(ellipse at 85% 55%,#087bba99,transparent 43%),
+ radial-gradient(ellipse at 50% 100%,#102b60,transparent 55%),
+ linear-gradient(155deg,#090d24,#101b39 55%,#050914);
+ opacity:0;visibility:hidden;pointer-events:none;
+ transition:opacity .65s,visibility .65s;touch-action:pan-y;user-select:none
+}
+#nova-lock.visible{opacity:1;visibility:visible;pointer-events:auto}
+.nl-status{width:100%;display:flex;justify-content:space-between;font-size:12px}
+.nl-status-icons{display:flex;gap:8px}
+.nl-brand{margin-top:75px;font-size:11px;font-weight:600;letter-spacing:5px;color:#d1d7ffcc}
+.nl-clock{margin-top:12px;font-size:clamp(65px,15vw,92px);font-weight:300;letter-spacing:-5px;line-height:1.15}
+.nl-date{margin-top:9px;font-size:15px;color:#e0e8ff}
+.nl-widget{width:100%;max-width:300px;margin-top:45px;padding:16px;border:1px solid #ffffff25;border-radius:20px;background:#ffffff0d;backdrop-filter:blur(18px)}
+.nl-widget-title{font-size:11px;color:#c2d4ff;letter-spacing:1.4px}
+.nl-widget-main{margin-top:8px;font-size:17px;font-weight:500}
+.nl-widget-sub{margin-top:5px;color:#b9c9e9;font-size:12px}
+.nl-bottom{position:absolute;left:24px;right:24px;bottom:27px;display:flex;flex-direction:column;align-items:center}
+.nl-shortcuts{display:flex;justify-content:space-between;width:100%;max-width:300px;margin-bottom:26px}
+.nl-shortcut{width:46px;height:46px;border:1px solid #ffffff30;border-radius:50%;color:white;background:#ffffff19;font-size:19px;cursor:pointer}
+.nl-swipe-area{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;padding:5px 0;cursor:grab;color:#e4ebff;font-size:12px}
+.nl-swipe-bar{width:105px;height:4px;border-radius:8px;background:#ffffffd9;animation:nl-pulse 1.8s infinite}
+#nova-lock.unlocking{animation:nl-unlock .55s ease forwards;pointer-events:none}
+@keyframes nl-pulse{50%{opacity:.55;transform:scaleX(.88)}}
+@keyframes nl-unlock{to{opacity:0;transform:translateY(-35px) scale(1.02);visibility:hidden}}
+@media(max-height:700px){#nova-lock{padding-top:25px}.nl-brand{margin-top:30px}.nl-widget{margin-top:25px}.nl-bottom{bottom:12px}.nl-shortcuts{margin-bottom:13px}}
+</style>
+
+<div id="nova-lock">
+ <div class="nl-status">
+  <span id="nl-status-time">09:41</span>
+  <div class="nl-status-icons"><span>●</span><span>◕</span><span>▰</span></div>
+ </div>
+ <div class="nl-brand">N O V A O S</div>
+ <div class="nl-clock" id="nl-clock">09:41</div>
+ <div class="nl-date" id="nl-date">Wednesday, 28 October</div>
+ <div class="nl-widget">
+  <div class="nl-widget-title">✦ Your day</div>
+  <div class="nl-widget-main" id="nl-greeting">Welcome back</div>
+  <div class="nl-widget-sub">Your NovaOS is ready when you are.</div>
+ </div>
+ <div class="nl-bottom">
+  <div class="nl-shortcuts">
+   <button class="nl-shortcut" id="nl-flashlight" title="Flashlight">ϟ</button>
+   <button class="nl-shortcut" id="nl-camera" title="Camera">▣</button>
+  </div>
+  <div class="nl-swipe-area" id="nl-swipe">
+   <div class="nl-swipe-bar"></div>
+   <span>Swipe up to unlock</span>
+  </div>
+ </div>
+</div>
+
+<!-- INTERNET PHONE -->
+<style>
+#nova-phone{display:none;position:fixed;inset:0;z-index:999980;background:#0b1020;color:white;font-family:Arial,sans-serif;padding:18px;overflow-y:auto}
+.phone-card{max-width:420px;margin:15px auto;padding:22px;border-radius:24px;background:#151d31;box-shadow:0 12px 45px #0005}
+#nova-phone h2{margin-top:0}
+#nova-phone input{width:100%;padding:13px;box-sizing:border-box;margin:8px 0 12px;border-radius:12px;border:1px solid #34415c;background:#0b1020;color:white;font-size:15px}
+#nova-phone button{padding:12px 16px;border:0;border-radius:12px;font-weight:bold;cursor:pointer;margin:4px}
+#nova-phone .green{background:#35d07f;color:#062313}
+#nova-phone .blue{background:#506dff;color:white}
+#nova-phone .red{background:#ed5365;color:white}
+#nova-phone .muted{color:#aebbd3;font-size:13px}
+#nova-phone .phone-status{background:#0b1020;border-radius:12px;padding:12px;overflow-wrap:anywhere}
+</style>
+
+<div id="nova-phone">
+ <div class="phone-card">
+  <div style="font-size:13px;color:#8ea7ff">NOVAOS COMMUNICATIONS</div>
+  <h2>☎ NovaOS Phone</h2>
+  <p class="muted">Free internet voice calls between connected devices.</p>
+  <div class="phone-status" id="np-status">Connecting to calling service...</div>
+  <p class="muted">Your device's calling ID</p>
+  <input id="np-myid" readonly placeholder="Getting your ID...">
+  <button class="blue" id="np-copy">Copy my ID</button>
+  <p class="muted">Enter the other device's calling ID</p>
+  <input id="np-theirid" placeholder="Paste the other device's ID">
+  <button class="green" id="np-call">☎ Call device</button>
+  <button class="green" id="np-answer" style="display:none">Answer call</button>
+  <button class="red" id="np-hangup">End call</button>
+  <p class="muted" id="np-incoming"></p>
+  <audio id="np-remote-audio" autoplay playsinline></audio>
+  <hr style="border-color:#34415c;margin:22px 0">
+  <button class="blue" id="np-close">Back to NovaOS</button>
+  <p class="muted">Both devices must be online and allow microphone access. This app does not call ordinary mobile numbers.</p>
+ </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+
+<script>
+const $=id=>document.getElementById(id);
+const win=$("window"),content=$("content");
+
+function tick(){
+ const n=new Date();
+ $("clock").textContent=n.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+ $("date").textContent=n.toLocaleDateString([],{weekday:"long",day:"numeric",month:"long"}).toUpperCase();
+}
+tick();
+setInterval(tick,1000);
+
+const apps={
+ Messages:`<h2>Messages ✉</h2><p>Your conversations will live here.</p><p>Welcome to NovaOS!</p>`,
+ Browser:`<h2>Browser ◎</h2><p>Open a website in a new tab.</p><input id="address" placeholder="example.com"><button class="action" id="visit">Visit website</button>`,
+ Music:`<h2>Music ♫</h2><p>Your personal music app.</p><p>Audio playback can be added next.</p>`,
+ Photos:`<h2>Photos ▧</h2><p>Choose a photo to preview it.</p><input type="file" id="photo" accept="image/*"><div id="preview"></div>`,
+ Settings:`<h2>Settings ⚙</h2><div class="row"><b>Operating system</b><p>NovaOS 1.0</p></div><div class="row"><b>Device</b><p>NovaOS Virtual Phone</p></div><div class="row"><b>Appearance</b><p>Change your wallpaper.</p><button class="action" id="theme">Change wallpaper</button></div>`,
+ Notes:`<h2>Notes ✎</h2><p>Your notes save in this browser.</p><textarea id="note" placeholder="Write something..."></textarea><button class="action" id="save">Save note</button><p id="saved"></p>`,
+ Phone:`<h2>Phone ☎</h2><p>NovaOS Internet Phone</p><p>Open the calling panel to connect to another device.</p><button class="action" id="open-phone">Open Phone</button>`
+};
+
+function openApp(name){
+ $("title").textContent=name;
+ content.innerHTML=apps[name]||"<h2>"+name+"</h2>";
+ win.hidden=false;
+
+ if(name==="Phone"){
+  win.hidden=true;
+  window.novaOpenPhone();
+  return;
+ }
+
+ if(name==="Notes"){
+  $("note").value=localStorage.getItem("nova-note")||"";
+  $("save").onclick=()=>{
+   localStorage.setItem("nova-note",$("note").value);
+   $("saved").textContent="Note saved!";
+  };
+ }
+
+ if(name==="Settings"){
+  $("theme").onclick=()=>{
+   $("home").style.background=$("home").dataset.alt==="yes"
+    ?"radial-gradient(ellipse at 85% 10%,#483873,transparent 45%),linear-gradient(150deg,#26213e,#171725 70%)"
+    :"radial-gradient(ellipse at 85% 10%,#216e77,transparent 45%),linear-gradient(150deg,#183e48,#15232d 70%)";
+   $("home").dataset.alt=$("home").dataset.alt==="yes"?"no":"yes";
+  };
+ }
+
+ if(name==="Browser"){
+  $("visit").onclick=()=>{
+   let a=$("address").value.trim();
+   if(!a)return;
+   if(!/^https?:\/\//i.test(a))a="https://"+a;
+   try{
+    const u=new URL(a);
+    if(!["https:","http:"].includes(u.protocol))throw Error();
+    window.open(u.href,"_blank","noopener,noreferrer");
+   }catch{alert("Enter a valid website address.");}
+  };
+ }
+
+ if(name==="Photos"){
+  $("photo").onchange=e=>{
+   const f=e.target.files[0];if(!f)return;
+   const img=document.createElement("img");
+   img.src=URL.createObjectURL(f);
+   img.style="width:100%;margin-top:15px;border-radius:14px";
+   img.alt="Photo preview";
+   $("preview").replaceChildren(img);
+  };
+ }
+}
+
+document.querySelectorAll("[data-app]").forEach(b=>
+ b.addEventListener("click",()=>openApp(b.dataset.app))
+);
+
+function closeApp(){win.hidden=true}
+$("back").onclick=closeApp;
+$("close").onclick=closeApp;
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeApp()});
+
+/* BOOT SEQUENCE */
+(() => {
+ const boot=$("nova-boot"),status=$("nova-boot-status");
+ const messages=[
+  "Initialising system...",
+  "Loading system services...",
+  "Preparing your home screen...",
+  "Almost ready..."
+ ];
+ let i=0;
+ const statusTimer=setInterval(()=>{
+  i++;
+  if(i<messages.length)status.textContent=messages[i];
+  else clearInterval(statusTimer);
+ },950);
+
+ setTimeout(()=>{
+  clearInterval(statusTimer);
+  boot.classList.add("finished");
+  setTimeout(()=>boot.remove(),900);
+  window.novaShowLockScreen();
+ },4000);
+})();
+
+/* LOCK SCREEN */
+(() => {
+ const lock=$("nova-lock");
+ const clock=$("nl-clock"),status=$("nl-status-time");
+ const date=$("nl-date"),greeting=$("nl-greeting");
+
+ function updateLockClock(){
+  const now=new Date();
+  clock.textContent=now.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",hour12:false});
+  status.textContent=clock.textContent;
+  date.textContent=now.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+  const h=now.getHours();
+  greeting.textContent=h<12?"Good morning ☀️":h<18?"Good afternoon ✨":"Good evening 🌙";
+ }
+ updateLockClock();
+ setInterval(updateLockClock,1000);
+
+ let startY=null,startX=null,unlocked=false;
+
+ function unlock(){
+  if(unlocked||!lock.classList.contains("visible"))return;
+  unlocked=true;
+  lock.classList.add("unlocking");
+  setTimeout(()=>lock.classList.remove("visible","unlocking"),600);
+ }
+
+ lock.addEventListener("pointerdown",e=>{startY=e.clientY;startX=e.clientX});
+ lock.addEventListener("pointerup",e=>{
+  if(startY===null)return;
+  const dy=startY-e.clientY,dx=Math.abs(startX-e.clientX);
+  if(dy>45&&dy>dx)unlock();
+  startY=null;startX=null;
+ });
+
+ $("nl-flashlight").onclick=e=>{
+  e.stopPropagation();
+  const b=e.currentTarget;
+  const on=b.dataset.on==="true";
+  b.dataset.on=on?"false":"true";
+  b.style.background=on?"#ffffff19":"#ffd16666";
+ };
+ $("nl-camera").onclick=e=>{
+  e.stopPropagation();
+  greeting.textContent="Camera shortcut coming soon 📷";
+ };
+ window.novaShowLockScreen=()=>{
+  unlocked=false;
+  lock.classList.remove("unlocking");
+  lock.classList.add("visible");
+ };
+})();
+
+/* NOVAOS INTERNET PHONE */
+(() => {
+ const screen=$("nova-phone");
+ const status=$("np-status"),myId=$("np-myid");
+ const theirId=$("np-theirid"),incomingText=$("np-incoming");
+ const answerButton=$("np-answer"),remoteAudio=$("np-remote-audio");
+
+ let peer=null,activeCall=null,pendingCall=null,localStream=null;
+
+ function setStatus(message){status.textContent=message}
+
+ async function getMicrophone(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+   throw new Error("Microphone unavailable. Open NovaOS from a supported HTTPS website.");
+  }
+  if(!localStream){
+   localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+  }
+  return localStream;
+ }
+
+ function endCall(){
+  const oldActive=activeCall,oldPending=pendingCall;
+  activeCall=null;pendingCall=null;
+  if(oldActive)oldActive.close();
+  if(oldPending)oldPending.close();
+  answerButton.style.display="none";
+  incomingText.textContent="";
+  remoteAudio.srcObject=null;
+  setStatus(peer&&peer.open?"Ready for an internet call.":"Not connected to calling service.");
+ }
+
+ function handleCall(call){
+  activeCall=call;
+  call.on("stream",stream=>{
+   remoteAudio.srcObject=stream;
+   remoteAudio.play().catch(()=>setStatus("Call connected. Tap the page if audio is blocked."));
+   setStatus("Call connected!");
+  });
+  call.on("close",()=>{
+   activeCall=null;
+   remoteAudio.srcObject=null;
+   answerButton.style.display="none";
+   incomingText.textContent="";
+   setStatus("Call ended.");
+  });
+  call.on("error",error=>setStatus("Call error: "+error.message));
+ }
+
+ $("np-call").onclick=async()=>{
+  const target=theirId.value.trim();
+  if(!peer||!peer.open){setStatus("Wait for the calling service to connect.");return}
+  if(!target){setStatus("Enter the other device's calling ID first.");return}
+  if(target===myId.value){setStatus("You cannot call your own device ID.");return}
+  try{
+   setStatus("Requesting microphone permission...");
+   const stream=await getMicrophone();
+   setStatus("Calling the other device...");
+   const call=peer.call(target,stream);
+   if(!call)throw new Error("Could not start the call.");
+   handleCall(call);
+  }catch(error){setStatus(error.message||"Could not start the call.")}
+ };
+
+ answerButton.onclick=async()=>{
+  if(!pendingCall)return;
+  try{
+   const stream=await getMicrophone();
+   const call=pendingCall;
+   pendingCall=null;
+   answerButton.style.display="none";
+   incomingText.textContent="";
+   call.answer(stream);
+   handleCall(call);
+   setStatus("Answering call...");
+  }catch(error){setStatus(error.message||"Could not answer the call.")}
+ };
+
+ $("np-hangup").onclick=endCall;
+
+ $("np-copy").onclick=async()=>{
+  if(!myId.value)return;
+  try{
+   await navigator.clipboard.writeText(myId.value);
+   setStatus("Your calling ID was copied.");
+  }catch(error){
+   myId.select();
+   setStatus("Select and copy your ID manually.");
+  }
+ };
+
+ $("np-close").onclick=()=>{
+  endCall();
+  screen.style.display="none";
+ };
+
+ window.novaOpenPhone=()=>{
+  screen.style.display="block";
+  if(peer)return;
+
+  if(typeof Peer==="undefined"){
+   setStatus("Calling library failed to load. Check your internet connection.");
+   return;
+  }
+
+  setStatus("Connecting to PeerJS calling service...");
+  peer=new Peer();
+
+  peer.on("open",id=>{
+   myId.value=id;
+   setStatus("Connected! Share your ID with the other device.");
+  });
+
+  peer.on("call",call=>{
+   if(activeCall||pendingCall){call.close();return}
+   pendingCall=call;
+   incomingText.textContent="Incoming call from "+call.peer;
+   answerButton.style.display="inline-block";
+   setStatus("Incoming call. Press Answer call to accept.");
+  });
+
+  peer.on("error",error=>setStatus("Calling service error: "+error.message));
+  peer.on("disconnected",()=>setStatus("Disconnected from calling service."));
+ };
+})();
+</script>
+
+</body>
+</html>
